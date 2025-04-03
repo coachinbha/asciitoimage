@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to ASCII Art Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .upload-container {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .preview-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .range-value {
+            text-align: right;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .output-container {
+            margin-top: 20px;
+        }
+        #asciiOutput {
+            width: 100%;
+            height: 300px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 8px;
+            line-height: 1;
+            white-space: pre;
+            overflow: auto;
+            resize: both;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .copy-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        .save-text-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .save-img-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .reset-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .hidden {
+            display: none;
+        }
+        #imagePreview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            display: none;
+        }
+        .char-preview {
+            font-family: monospace;
+            font-size: 16px;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .color-mode-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .color-mode-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-chars {
+            font-family: monospace;
+            font-size: 14px;
+            padding: 4px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image to ASCII Art Converter</h1>
+        
+        <div class="upload-container" id="uploadContainer">
+            <p>Upload a file by dragging and dropping it here, or click here to select file</p>
+            <input type="file" id="fileInput" accept="image/*" class="hidden">
+        </div>
+        
+        <div class="preview-container">
+            <img id="imagePreview" alt="Preview">
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="characters">Characters</label>
+                <input type="range" id="characters" min="10" max="1000" value="100">
+                <div class="range-value"><span id="charactersValue">100</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="brightness">Brightness</label>
+                <input type="range" id="brightness" min="0" max="200" value="100">
+                <div class="range-value"><span id="brightnessValue">100%</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="contrast">Contrast</label>
+                <input type="range" id="contrast" min="0" max="200" value="100">
+                <div class="range-value"><span id="contrastValue">100%</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="saturation">Saturation</label>
+                <input type="range" id="saturation" min="0" max="200" value="100">
+                <div class="range-value"><span id="saturationValue">100%</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="hue">Hue</label>
+                <input type="range" id="hue" min="-180" max="180" value="0">
+                <div class="range-value"><span id="hueValue">0°</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="grayscale">Grayscale</label>
+                <input type="range" id="grayscale" min="0" max="100" value="0">
+                <div class="range-value"><span id="grayscaleValue">0%</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="sepia">Sepia</label>
+                <input type="range" id="sepia" min="0" max="100" value="0">
+                <div class="range-value"><span id="sepiaValue">0%</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="invert">Invert Colors</label>
+                <input type="range" id="invert" min="0" max="100" value="0">
+                <div class="range-value"><span id="invertValue">0%</span></div>
+            </div>
+            
+            <div class="control-group">
+                <label for="spaceDensity">Space Density</label>
+                <input type="range" id="spaceDensity" min="0.1" max="5" step="0.1" value="1">
+                <div class="range-value"><span id="spaceDensityValue">1</span></div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>ASCII Character Set</label>
+            <select id="asciiCharSet">
+                <option value="normal">Normal</option>
+                <option value="simple">Simple</option>
+                <option value="complex">Complex</option>
+                <option value="blocks">Color Blocks</option>
+                <option value="shades">Shades</option>
+                <option value="lines">Lines</option>
+                <option value="dots">Dots</option>
+                <option value="emoji">Color Squares</option>
+                <option value="custom">Custom</option>
+            </select>
+            <div class="char-preview" id="charSetPreview">@%#*+=-:. </div>
+        </div>
+        
+        <div class="control-group" id="customCharSetContainer" style="display: none;">
+            <label for="customCharSet">Custom Characters</label>
+            <input type="text" id="customCharSet" value="@%#*+=-:. ">
+        </div>
+        
+        <div class="output-container">
+            <pre id="asciiOutput"></pre>
+        </div>
+        
+        <div class="button-group">
+            <button class="copy-btn" id="copyBtn">Copy to Clipboard</button>
+            <button class="save-text-btn" id="saveTextBtn">Save ASCII Art</button>
+            <button class="save-img-btn" id="saveImgBtn">Save as PNG</button>
+            <button class="reset-btn" id="resetBtn">Reset Filters</button>
+        </div>
+    </div>
+
+    <script>
+        // Character sets
+        const charSets = {
+            normal: '@%#*+=-:. ',
+            simple: '@#=:. ',
+            complex: '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,"^`\'. ',
+            blocks: '█▓▒░ ',
+            shades: '█▇▆▅▄▃▂▁ ',
+            lines: '┃┃┃┣━━╋┻┳┻┫┏┓┗┛┣┫┳┻╋━ ',
+            dots: '●◉○◌◍◎◯ ',
+            emoji: '🟥🟧🟨🟩🟦🟪🟫⬛⬜ ',
+            custom: '@%#*+=-:. '
+        };
+
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadContainer = document.getElementById('uploadContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const asciiOutput = document.getElementById('asciiOutput');
+        const copyBtn = document.getElementById('copyBtn');
+        const saveTextBtn = document.getElementById('saveTextBtn');
+        const saveImgBtn = document.getElementById('saveImgBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const asciiCharSetSelect = document.getElementById('asciiCharSet');
+        const customCharSetContainer = document.getElementById('customCharSetContainer');
+        const customCharSetInput = document.getElementById('customCharSet');
+        const charSetPreview = document.getElementById('charSetPreview');
+
+        // Control elements
+        const controls = {
+            characters: document.getElementById('characters'),
+            brightness: document.getElementById('brightness'),
+            contrast: document.getElementById('contrast'),
+            saturation: document.getElementById('saturation'),
+            hue: document.getElementById('hue'),
+            grayscale: document.getElementById('grayscale'),
+            sepia: document.getElementById('sepia'),
+            invert: document.getElementById('invert'),
+            spaceDensity: document.getElementById('spaceDensity')
+        };
+
+        // Value display elements
+        const valueDisplays = {
+            characters: document.getElementById('charactersValue'),
+            brightness: document.getElementById('brightnessValue'),
+            contrast: document.getElementById('contrastValue'),
+            saturation: document.getElementById('saturationValue'),
+            hue: document.getElementById('hueValue'),
+            grayscale: document.getElementById('grayscaleValue'),
+            sepia: document.getElementById('sepiaValue'),
+            invert: document.getElementById('invertValue'),
+            spaceDensity: document.getElementById('spaceDensityValue')
+        };
+
+        let currentImage = null;
+        let originalImageSrc = null;
+
+        // Setup event listeners
+        uploadContainer.addEventListener('click', () => fileInput.click());
+        uploadContainer.addEventListener('dragover', e => {
+            e.preventDefault();
+            uploadContainer.style.borderColor = '#007bff';
+        });
+        uploadContainer.addEventListener('dragleave', () => {
+            uploadContainer.style.borderColor = '#ccc';
+        });
+        uploadContainer.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadContainer.style.borderColor = '#ccc';
+            
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFileUpload(fileInput.files[0]);
+            }
+        });
+
+        // Handle control changes
+        Object.keys(controls).forEach(control => {
+            controls[control].addEventListener('input', () => {
+                updateValueDisplay(control);
+                if (currentImage) {
+                    updatePreviewWithEffects();
+                    convertToAscii();
+                }
+            });
+        });
+
+        // ASCII character set selection
+        asciiCharSetSelect.addEventListener('change', () => {
+            const selected = asciiCharSetSelect.value;
+            customCharSetContainer.style.display = selected === 'custom' ? 'block' : 'none';
+            updateCharSetPreview(selected);
+            
+            if (currentImage) {
+                convertToAscii();
+            }
+        });
+
+        customCharSetInput.addEventListener('input', () => {
+            if (customCharSetInput.value.trim() === '') {
+                customCharSetInput.value = '.';
+            }
+            updateCharSetPreview('custom');
+            if (currentImage) {
+                convertToAscii();
+            }
+        });
+
+        // Update character set preview
+        function updateCharSetPreview(selected) {
+            let chars;
+            if (selected === 'custom') {
+                chars = customCharSetInput.value || '.';
+            } else {
+                chars = charSets[selected];
+            }
+            charSetPreview.textContent = chars;
+        }
+
+        // Button actions
+        copyBtn.addEventListener('click', () => {
+            const text = asciiOutput.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('ASCII art copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        });
+
+        saveTextBtn.addEventListener('click', () => {
+            const text = asciiOutput.textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ascii-art.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        saveImgBtn.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const lines = asciiOutput.textContent.split('\n');
+            const fontSize = 8;
+            const lineHeight = fontSize * 1.2;
+            
+            // Determine canvas size
+            let maxLineLength = 0;
+            for (const line of lines) {
+                if (line.length > maxLineLength) {
+                    maxLineLength = line.length;
+                }
+            }
+            
+            canvas.width = maxLineLength * (fontSize * 0.6);
+            canvas.height = lines.length * lineHeight;
+            
+            context.fillStyle = '#f0f0f0';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#000000';
+            context.font = `${fontSize}px monospace`;
+            
+            for (let i = 0; i < lines.length; i++) {
+                context.fillText(lines[i], 0, (i + 1) * lineHeight);
+            }
+            
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ascii-art.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            controls.characters.value = 100;
+            controls.brightness.value = 100;
+            controls.contrast.value = 100;
+            controls.saturation.value = 100;
+            controls.hue.value = 0;
+            controls.grayscale.value = 0;
+            controls.sepia.value = 0;
+            controls.invert.value = 0;
+            controls.spaceDensity.value = 1;
+            asciiCharSetSelect.value = 'normal';
+            customCharSetContainer.style.display = 'none';
+            updateCharSetPreview('normal');
+            
+            Object.keys(controls).forEach(updateValueDisplay);
+            
+            if (currentImage) {
+                updatePreviewWithEffects();
+                convertToAscii();
+            }
+        });
+
+        // Handle file upload
+        function handleFileUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    originalImageSrc = img.src;
+                    updatePreviewWithEffects();
+                    convertToAscii();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Update display values
+        function updateValueDisplay(control) {
+            const value = controls[control].value;
+            
+            switch(control) {
+                case 'brightness':
+                case 'contrast':
+                case 'saturation':
+                case 'grayscale':
+                case 'sepia':
+                case 'invert':
+                    valueDisplays[control].textContent = `${value}%`;
+                    break;
+                case 'hue':
+                    valueDisplays[control].textContent = `${value}°`;
+                    break;
+                default:
+                    valueDisplays[control].textContent = value;
+            }
+        }
+
+        // Update image preview with current effects
+        function updatePreviewWithEffects() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas dimensions to match the image
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            
+            // Apply filters to the context
+            ctx.filter = getFilterString();
+            
+            // Draw the image with filters applied
+            ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+            
+            // Update the preview image
+            imagePreview.src = canvas.toDataURL();
+            imagePreview.style.display = 'block';
+        }
+
+        // Get current filter string
+        function getFilterString() {
+            return `
+                brightness(${controls.brightness.value}%) 
+                contrast(${controls.contrast.value}%) 
+                saturate(${controls.saturation.value}%) 
+                hue-rotate(${controls.hue.value}deg) 
+                grayscale(${controls.grayscale.value}%) 
+                sepia(${controls.sepia.value}%) 
+                invert(${controls.invert.value}%)
+            `;
+        }
+
+        // Replace the convertToAscii function with this improved version
+function convertToAscii() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Get width from slider (now up to 1000)
+    const width = parseInt(controls.characters.value);
+    const height = Math.floor(width * (currentImage.height / currentImage.width) / 2);
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    // Apply filters
+    ctx.filter = getFilterString();
+    
+    // Draw the image
+    ctx.drawImage(currentImage, 0, 0, width, height);
+    
+    const imageData = ctx.getImageData(0, 0, width, height).data;
+    let asciiImage = '';
+    
+    // Get the current character set
+    let chars;
+    if (asciiCharSetSelect.value === 'custom') {
+        chars = customCharSetInput.value || '.';
+    } else {
+        chars = charSets[asciiCharSetSelect.value];
+    }
+    
+    const spaceDensity = parseFloat(controls.spaceDensity.value);
+    const isColorSquares = asciiCharSetSelect.value === 'emoji';
+    
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const index = (y * width + x) * 4;
+            const r = imageData[index];
+            const g = imageData[index + 1];
+            const b = imageData[index + 2];
+            
+            let char;
+            
+            if (isColorSquares) {
+                // Improved color mapping for emoji squares
+                char = mapRGBToColorSquare(r, g, b);
+            } else {
+                // Regular brightness-based character mapping
+                const brightness = (r + g + b) / 3 / 255;
+                const charIndex = Math.floor(brightness * (chars.length - 1));
+                char = chars[charIndex];
+            }
+            
+            // Apply space density (repeat the character)
+            for (let i = 0; i < spaceDensity; i++) {
+                asciiImage += char;
+            }
+        }
+        asciiImage += '\n';
+    }
+    
+    asciiOutput.textContent = asciiImage;
+    
+    // Adjust font size for color squares to ensure proper rendering
+    if (isColorSquares) {
+        asciiOutput.style.fontSize = '7px';
+        asciiOutput.style.lineHeight = '0.9';
+    } else {
+        asciiOutput.style.fontSize = '8px';
+        asciiOutput.style.lineHeight = '1';
+    }
+}
+
+// Add this new function for RGB color mapping
+function mapRGBToColorSquare(r, g, b) {
+    // Define the color square emojis
+    const colorSquares = ['🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '🟫', '⬛', '⬜'];
+    
+    // Determine if it's mostly black or white
+    const brightness = (r + g + b) / 3;
+    if (brightness < 30) return '⬛';  // Black
+    if (brightness > 225) return '⬜';  // White
+    
+    // Check if it's a shade of brown
+    if (r > g && r > b && g > 60 && b < 60) return '🟫';
+    
+    // Find the dominant color channel
+    const max = Math.max(r, g, b);
+    
+    // If no strong dominant color, use brightness for grayscale
+    const colorDominance = Math.max(r, g, b) - Math.min(r, g, b);
+    if (colorDominance < 30) {
+        return brightness < 128 ? '⬛' : '⬜';
+    }
+    
+    // Map to the appropriate color square
+    if (max === r) {
+        if (g > 200 && b < 100) return '🟨';  // Yellow (red + green)
+        return '🟥';  // Red
+    } else if (max === g) {
+        if (r > 180) return '🟨';  // Yellow-green
+        return '🟩';  // Green
+    } else {
+        if (r > 150) return '🟪';  // Purple (blue + red)
+        return '🟦';  // Blue
+    }
+}
+
+        // Initialize control value displays
+        Object.keys(controls).forEach(updateValueDisplay);
+        
+        // Initialize character set preview
+        updateCharSetPreview('normal');
+    </script>
+</body>
+</html>
