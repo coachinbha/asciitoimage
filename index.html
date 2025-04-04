@@ -211,6 +211,12 @@
                 <input type="range" id="invert" min="0" max="100" value="0">
                 <div class="range-value"><span id="invertValue">0%</span></div>
             </div>
+
+            <div class="control-group">
+                <label for="transparency">Transparency Threshold</label>
+                <input type="range" id="transparency" min="0" max="255" value="230">
+                <div class="range-value"><span id="transparencyValue">230</span></div>
+            </div>
             
             <div class="control-group">
                 <label for="spaceDensity">Space Density</label>
@@ -281,30 +287,32 @@
         const charSetPreview = document.getElementById('charSetPreview');
 
         // Control elements
-        const controls = {
-            characters: document.getElementById('characters'),
-            brightness: document.getElementById('brightness'),
-            contrast: document.getElementById('contrast'),
-            saturation: document.getElementById('saturation'),
-            hue: document.getElementById('hue'),
-            grayscale: document.getElementById('grayscale'),
-            sepia: document.getElementById('sepia'),
-            invert: document.getElementById('invert'),
-            spaceDensity: document.getElementById('spaceDensity')
-        };
+const controls = {
+    characters: document.getElementById('characters'),
+    brightness: document.getElementById('brightness'),
+    contrast: document.getElementById('contrast'),
+    saturation: document.getElementById('saturation'),
+    hue: document.getElementById('hue'),
+    grayscale: document.getElementById('grayscale'),
+    sepia: document.getElementById('sepia'),
+    invert: document.getElementById('invert'),
+    spaceDensity: document.getElementById('spaceDensity'),
+    transparency: document.getElementById('transparency') // Add this line
+};
 
         // Value display elements
-        const valueDisplays = {
-            characters: document.getElementById('charactersValue'),
-            brightness: document.getElementById('brightnessValue'),
-            contrast: document.getElementById('contrastValue'),
-            saturation: document.getElementById('saturationValue'),
-            hue: document.getElementById('hueValue'),
-            grayscale: document.getElementById('grayscaleValue'),
-            sepia: document.getElementById('sepiaValue'),
-            invert: document.getElementById('invertValue'),
-            spaceDensity: document.getElementById('spaceDensityValue')
-        };
+const valueDisplays = {
+    characters: document.getElementById('charactersValue'),
+    brightness: document.getElementById('brightnessValue'),
+    contrast: document.getElementById('contrastValue'),
+    saturation: document.getElementById('saturationValue'),
+    hue: document.getElementById('hueValue'),
+    grayscale: document.getElementById('grayscaleValue'),
+    sepia: document.getElementById('sepiaValue'),
+    invert: document.getElementById('invertValue'),
+    spaceDensity: document.getElementById('spaceDensityValue'),
+    transparency: document.getElementById('transparencyValue') // Add this line
+};
 
         let currentImage = null;
         let originalImageSrc = null;
@@ -436,26 +444,27 @@
         });
 
         resetBtn.addEventListener('click', () => {
-            controls.characters.value = 100;
-            controls.brightness.value = 100;
-            controls.contrast.value = 100;
-            controls.saturation.value = 100;
-            controls.hue.value = 0;
-            controls.grayscale.value = 0;
-            controls.sepia.value = 0;
-            controls.invert.value = 0;
-            controls.spaceDensity.value = 1;
-            asciiCharSetSelect.value = 'normal';
-            customCharSetContainer.style.display = 'none';
-            updateCharSetPreview('normal');
-            
-            Object.keys(controls).forEach(updateValueDisplay);
-            
-            if (currentImage) {
-                updatePreviewWithEffects();
-                convertToAscii();
-            }
-        });
+    controls.characters.value = 100;
+    controls.brightness.value = 100;
+    controls.contrast.value = 100;
+    controls.saturation.value = 100;
+    controls.hue.value = 0;
+    controls.grayscale.value = 0;
+    controls.sepia.value = 0;
+    controls.invert.value = 0;
+    controls.spaceDensity.value = 1;
+    controls.transparency.value = 230; // Add this line
+    asciiCharSetSelect.value = 'normal';
+    customCharSetContainer.style.display = 'none';
+    updateCharSetPreview('normal');
+    
+    Object.keys(controls).forEach(updateValueDisplay);
+    
+    if (currentImage) {
+        updatePreviewWithEffects();
+        convertToAscii();
+    }
+});
 
         // Handle file upload
         function handleFileUpload(file) {
@@ -533,7 +542,7 @@
         }
 
         // Replace the convertToAscii function with this improved version
-function convertToAscii() {
+        function convertToAscii() {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
@@ -564,12 +573,28 @@ function convertToAscii() {
     const spaceDensity = parseFloat(controls.spaceDensity.value);
     const isColorSquares = asciiCharSetSelect.value === 'emoji';
     
+    // Get transparency threshold from new slider
+    const transparencyThreshold = parseInt(controls.transparency.value);
+    
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const index = (y * width + x) * 4;
             const r = imageData[index];
             const g = imageData[index + 1];
             const b = imageData[index + 2];
+            const a = imageData[index + 3];
+            
+            // Calculate brightness (0-255)
+            const brightness = (r + g + b) / 3;
+            
+            // Check if the pixel should be transparent based on brightness
+            if (brightness >= transparencyThreshold) {
+                // Apply blank space for "transparent" areas
+                for (let i = 0; i < spaceDensity; i++) {
+                    asciiImage += ' ';
+                }
+                continue;
+            }
             
             let char;
             
@@ -578,8 +603,8 @@ function convertToAscii() {
                 char = mapRGBToColorSquare(r, g, b);
             } else {
                 // Regular brightness-based character mapping
-                const brightness = (r + g + b) / 3 / 255;
-                const charIndex = Math.floor(brightness * (chars.length - 1));
+                const normalizedBrightness = brightness / 255;
+                const charIndex = Math.floor(normalizedBrightness * (chars.length - 1));
                 char = chars[charIndex];
             }
             
