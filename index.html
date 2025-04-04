@@ -603,7 +603,6 @@ function convertToAscii() {
     }
 }
 
-// Add this new function for RGB color mapping
 function mapRGBToColorSquare(r, g, b) {
     // Define the color square emojis
     const colorSquares = ['🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '🟫', '⬛', '⬜'];
@@ -613,28 +612,31 @@ function mapRGBToColorSquare(r, g, b) {
     if (brightness < 30) return '⬛';  // Black
     if (brightness > 225) return '⬜';  // White
     
-    // Check if it's a shade of brown
-    if (r > g && r > b && g > 60 && b < 60) return '🟫';
-    
-    // Find the dominant color channel
+    // Calculate color dominance
     const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const colorDominance = max - min;
     
-    // If no strong dominant color, use brightness for grayscale
-    const colorDominance = Math.max(r, g, b) - Math.min(r, g, b);
-    if (colorDominance < 30) {
-        return brightness < 128 ? '⬛' : '⬜';
+    // If no strong dominant color, use grayscale
+    if (colorDominance < 40) {
+        if (brightness < 100) return '⬛';
+        if (brightness > 180) return '⬜';
+        return '🟫'; // Use brown for mid-grays
     }
     
-    // Map to the appropriate color square
+    // Map to the appropriate color square based on hue
     if (max === r) {
-        if (g > 200 && b < 100) return '🟨';  // Yellow (red + green)
-        return '🟥';  // Red
+        if (g > r * 0.7 && b < r * 0.5) return '🟧'; // Orange
+        if (g > r * 0.8) return '🟨'; // Yellow
+        return '🟥'; // Red
     } else if (max === g) {
-        if (r > 180) return '🟨';  // Yellow-green
-        return '🟩';  // Green
-    } else {
-        if (r > 150) return '🟪';  // Purple (blue + red)
-        return '🟦';  // Blue
+        if (r > g * 0.8) return '🟨'; // Yellow-green
+        if (b > g * 0.8) return '🟩'; // Cyan-green
+        return '🟩'; // Green
+    } else { // max === b
+        if (r > b * 0.8) return '🟪'; // Purple
+        if (g > b * 0.8) return '🟩'; // Cyan
+        return '🟦'; // Blue
     }
 }
 
